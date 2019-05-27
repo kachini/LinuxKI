@@ -2337,7 +2337,12 @@ sched_switch_trace(RXUNUSED struct rq *rq, struct task_struct *p, struct task_st
 
 	strncpy(t->prev_comm, current->comm, TASK_COMM_LEN);
 	regs = task_pt_regs(current);
-	t->syscallno = syscall_get_nr(current, regs);
+
+        if (regs) 
+                t->syscallno = syscall_get_nr(current, regs);
+        else
+                t->syscallno=-1;
+
 	t->prev_prio = p->prio;
 	t->prev_state = p->state;
 
