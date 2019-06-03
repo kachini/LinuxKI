@@ -490,12 +490,12 @@ print_syscall_info(void *arg1, void *arg2)
 		if (iovstatp->wr_cnt) 
 			pid_printf ("%s   %-15s%8d %8.1f %11s %10.6f %10.6f %7s %7lld %8.1f\n", tab,
 					"AIO Writes",
-					iovstatp->wr_cnt,
-					iovstatp->wr_cnt/secs,
+					" ", /* iovstatp->wr_cnt, */
+					" ", /* iovstatp->wr_cnt/secs, */
 					" ",/* SECS(iovstatp->rd_time), */
-					SECS(iovstatp->wr_time),
-					SECS(iovstatp->wr_time / iovstatp->wr_cnt),
-					SECS(iovstatp->wr_max_time),
+					" ", /* SECS(iovstatp->wr_time), */ 
+					" ", /* SECS(iovstatp->wr_time / iovstatp->wr_cnt), */ 
+					" ", /* SECS(iovstatp->wr_max_time), */
 					" ",
 					iovstatp->wr_bytes / iovstatp->wr_cnt,
 					(iovstatp->wr_bytes) / (secs * 1024.0));

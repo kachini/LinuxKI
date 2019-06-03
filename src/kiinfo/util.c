@@ -2281,6 +2281,14 @@ syscallname_to_syscallno(char *name, int *syscallno32, int *syscallno64)
 						break;
 					}
 				}
+			} else if (arch_flag == PPC64LE) {
+                               for (j = 0; j < MAX_SYSCALL_IDX; j++) {
+                                        if (i == syscall_index_ppc64le[j]) {
+                                                *syscallno32 = j;
+                                                *syscallno64 = j;
+                                                break;
+                                        }
+				}
 			} else {
 				for (j = 0; j < MAX_SYSCALL_IDX; j++) {
 					if (i == syscall_index_x86_32[j]) {

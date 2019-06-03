@@ -344,7 +344,8 @@ Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 #define X86_64		0
 #define AARCH64		1
-#define MAXARCH		2
+#define PPC64LE		2
+#define MAXARCH		3
 
 #define ELF32		0		
 #define ELF64		1
@@ -2284,6 +2285,7 @@ extern arg_action_t arg_actions[];
 extern short syscall_index_x86_64[];
 extern short syscall_index_x86_32[];
 extern short syscall_index_aarch_64[];
+extern short syscall_index_ppc64le[];
 extern int cpu2ldom[MAXCPUS*2][2];
 
 extern void hex_dump(void *, int);

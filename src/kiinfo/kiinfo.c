@@ -170,6 +170,10 @@ main(int argc, char *argv[])
 		if (uname(&utsname) == 0) {
 			if (strstr(utsname.machine, "aarch64")) arch_flag = AARCH64;
 		}
+
+		if (uname(&utsname) == 0) {
+			if (strstr(utsname.machine, "ppc64le")) arch_flag = PPC64LE;
+		}
 		clear_kgdboc();
 		likidump();
 		if (kgdboc_str) reset_kgdboc();
@@ -233,6 +237,11 @@ main(int argc, char *argv[])
 			if (strstr(utsname.machine, "aarch64")) arch_flag = AARCH64;
 		}
 
+                if (uname(&utsname) == 0) {
+                        if (strstr(utsname.machine, "ppc64le")) arch_flag = PPC64LE;
+                }
+
+
 		globals = GET_SERVER(server[0]);
 		globals->server_id = nservers;
 		globals->VM_guest = VM_guest;
@@ -242,6 +251,9 @@ main(int argc, char *argv[])
 		if (arch_flag == AARCH64) {
 			globals->syscall_index_32 = syscall_index_aarch_64;
 			globals->syscall_index_64 = syscall_index_aarch_64;
+		} else if (arch_flag == PPC64LE) {
+		        globals->syscall_index_32 = syscall_index_ppc64le;
+                        globals->syscall_index_64 = syscall_index_ppc64le;
 		} else {
 			globals->syscall_index_32 = syscall_index_x86_32;
 			globals->syscall_index_64 = syscall_index_x86_64;
@@ -309,6 +321,9 @@ main(int argc, char *argv[])
 		if (arch_flag == AARCH64) {
 			globals->syscall_index_32 = syscall_index_aarch_64;
 			globals->syscall_index_64 = syscall_index_aarch_64;
+		} else if (arch_flag == PPC64LE) {
+		        globals->syscall_index_32 = syscall_index_ppc64le;
+                        globals->syscall_index_64 = syscall_index_ppc64le;
 		} else {
 			globals->syscall_index_32 = syscall_index_x86_32;
 			globals->syscall_index_64 = syscall_index_x86_64;
@@ -372,7 +387,10 @@ main(int argc, char *argv[])
 				if (arch_flag == AARCH64) {
 					globals->syscall_index_32 = syscall_index_aarch_64;
 					globals->syscall_index_64 = syscall_index_aarch_64;
-				} else {
+				} else if (arch_flag == PPC64LE) {
+				        globals->syscall_index_32 = syscall_index_ppc64le;
+              		                globals->syscall_index_64 = syscall_index_ppc64le;
+					} else {
 					globals->syscall_index_32 = syscall_index_x86_32;
 					globals->syscall_index_64 = syscall_index_x86_64;
 				}

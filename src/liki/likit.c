@@ -71,17 +71,22 @@
 
 #ifndef NR_syscalls
 #define NR_syscalls __NR_syscalls
-#endif
+
+#elif defined CONFIG_PPC64
+#include <../arch/powerpc/include/asm/unistd.h>
+#include <../include/linux/stacktrace.h>
 
 #else
 Confused about platform!
 #endif
-
+#endif
 
 #if defined CONFIG_X86_64
 #define	IS_32BIT	test_thread_flag(TIF_IA32)
 #elif defined CONFIG_ARM64
 #define IS_32BIT	test_thread_flag(TIF_32BIT)
+#elif defined CONFIG_PPC64
+#define IS_32BIT        test_thread_flag(TIF_32BIT)
 #else
 Confused about platform!
 #endif
@@ -453,6 +458,12 @@ struct tp_struct tp_table[];
  * some of the complexities.
  */
 
+#ifdef CONFIG_PPC64
+#define STACK_TRACE(DATA, REGS)                                         \
+	save_stack_trace_regs_fp(REGS, DATA);
+#endif
+
+
 #ifdef CONFIG_X86_64
 
 #if (defined SLES15)
@@ -754,6 +765,97 @@ liki_stack_unwind(struct pt_regs *regs, int skip, int *start)
 
 #endif
 
+#define liki_get_SP()      ({unsigned long sp; \
+                        asm volatile("mr %0,1": "=r" (sp)); sp;})
+
+/*                (regs)->gpr[1] = *(unsigned long *)liki_get_SP();       \  */
+
+
+#define liki_fetch_kern_caller_regs(regs)                 \
+        do {                                                    \
+                (regs)->result = 0;                             \
+                (regs)->nip = (unsigned long)__builtin_return_address(0);                             \
+                asm volatile("mr %0,1": "=r" ((regs)->gpr[1]));       \
+                asm volatile("mfmsr %0" : "=r" ((regs)->msr));  \
+        } while (0)
+
+/* for PPC64 just taking x86 stuff as a prototype. It seems giving something. */
+
+inline struct perf_callchain_entry *
+liki_stack_unwind(struct pt_regs *regs, int skip, int *start)
+ {
+
+        struct perf_callchain_entry     *callchain;
+        struct pt_regs                  local_regs;
+
+        /* Switch and migration cases regs will be NULL
+         */
+        if (regs == NULL) {
+                liki_fetch_kern_caller_regs(&local_regs);
+                regs = &local_regs;
+        } else {
+                /* Hardclock case regs will be set
+                 */
+
+/* SK: I didn't test with kernels < 3.0. So do not know if it works. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,0)
+                regs = get_irq_regs();
+#else
+                /* The register context passed in from the profiling driver
+                 * doesn't form the basis of a good unwind for earlier
+                 * kernels
+                 */
+                if (user_mode(regs)) {
+                        if (current && current->mm) {
+                                regs = task_pt_regs(current);
+                        }
+                } else {
+                        liki_fetch_kern_caller_regs(&local_regs);
+                        regs = &local_regs;
+                }
+#endif
+        }
+
+        *start = 0;
+        callchain = (struct perf_callchain_entry *)&get_cpu_var(liki_callchains);
+        callchain->nr = 0;
+
+        if (!user_mode(regs)) {
+                struct stack_trace      st;
+
+                st.entries = (unsigned long *)callchain->ip;
+                st.skip = skip;
+                st.max_entries = MAX_STACK_DEPTH;
+
+                /* Leave space for kernel marker */
+                st.nr_entries = 1;
+
+                STACK_TRACE(&st, regs);
+
+                /* If STACK_TRACE() gives us a useful stack then prepend
+                 * the kernel marker
+                 */
+                if (st.nr_entries > 1) {
+                        if (callchain->ip[st.nr_entries-1] == END_STACK)
+                        st.nr_entries--;
+
+
+                        callchain->ip[0] = STACK_CONTEXT_KERNEL;
+                        callchain->nr = st.nr_entries;
+                } else
+                        callchain->nr = 0;
+
+                if (current && current->mm)
+                        regs = task_pt_regs(current);
+                else
+                        regs = NULL;
+        }
+
+
+        put_cpu_var(liki_callchains);
+
+        return(callchain);
+}
 
 /* The exporting of symbols seems erratic. Most of the kernel functions I want
  * to access are exported in most releases, but not all in all. To work around
@@ -6875,11 +6977,20 @@ liki_initialize(void)
 	 * for module use, so instead I'll go find the address of those 
 	 * un-exported functions and call them anyway.
 	 */
+
+#if defined CONFIG_PPC64 
+        if ((sockfd_lookup_light_fp = (void *)kallsyms_lookup_name("sockfd_lookup")) == 0) {
+		printk(KERN_WARNING "LiKI: cannot find sockfd_lookup()\n");
+		printk(KERN_WARNING "LiKI: tracing initialization failed\n");
+		return(-EINVAL);
+	}
+#else
         if ((sockfd_lookup_light_fp = (void *)kallsyms_lookup_name("sockfd_lookup_light")) == 0) {
 		printk(KERN_WARNING "LiKI: cannot find sockfd_lookup_light()\n");
 		printk(KERN_WARNING "LiKI: tracing initialization failed\n");
 		return(-EINVAL);
 	}
+#endif 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,0,0)
         if ((save_stack_trace_regs_fp = (void *)kallsyms_lookup_name("save_stack_trace_regs")) == 0) {

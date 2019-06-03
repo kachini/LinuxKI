@@ -98,7 +98,9 @@ parse_uname(char print_flag)
 
 			if (strstr(input_str, "aarch64")) {
 				arch_flag = AARCH64;
-			}
+			} else if (strstr(input_str, "ppc64le")) { 
+				arch_flag = PPC64LE;
+			} 
                 }
 
 		fclose(f);
@@ -433,7 +435,7 @@ parse_dmidecode()
 	char fname[30];
 	char *rtnptr;
 
-	if (is_alive || (arch_flag == AARCH64))  return;
+	if (is_alive || (arch_flag == AARCH64 || arch_flag == PPC64LE ))  return;
 
 	sprintf(fname, "dmidecode.%s", timestamp);
         if ( (f = fopen(fname,"r")) == NULL) {
