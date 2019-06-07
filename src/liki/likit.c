@@ -458,9 +458,17 @@ struct tp_struct tp_table[];
  * some of the complexities.
  */
 
-#ifdef CONFIG_PPC64
+
+#ifdef CONFIG_PPC64 
+ 
+#if (defined SLES12) 
 #define STACK_TRACE(DATA, REGS)                                         \
-	save_stack_trace_regs_fp(REGS, DATA);
+save_stack_trace(DATA); 
+#else 
+ 
+#define STACK_TRACE(DATA, REGS)                                         \
+        save_stack_trace_regs_fp(REGS, DATA); 
+#endif 
 #endif
 
 
@@ -763,13 +771,7 @@ liki_stack_unwind(struct pt_regs *regs, int skip, int *start)
 	return(callchain);
 }
 
-#endif
-
-#define liki_get_SP()      ({unsigned long sp; \
-                        asm volatile("mr %0,1": "=r" (sp)); sp;})
-
-/*                (regs)->gpr[1] = *(unsigned long *)liki_get_SP();       \  */
-
+#elif defined CONFIG_PPC64
 
 #define liki_fetch_kern_caller_regs(regs)                 \
         do {                                                    \
@@ -856,6 +858,7 @@ liki_stack_unwind(struct pt_regs *regs, int skip, int *start)
 
         return(callchain);
 }
+#endif
 
 /* The exporting of symbols seems erratic. Most of the kernel functions I want
  * to access are exported in most releases, but not all in all. To work around

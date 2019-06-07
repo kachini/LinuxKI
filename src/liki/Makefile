@@ -112,7 +112,7 @@ else ifneq (,$(findstring sles,$(hostdistro))) # SUSE Linux Enterprise Server (S
         EXTRA_CFLAGS=-g -O3 -Wall -DSLES11 -DHARDCLOCK_STACK_SKIP=11 -DOTHER_STACK_SKIP=3
     else ifneq (,$(findstring 12.,$(hostversion)))
         #SLES12
-        EXTRA_CFLAGS=-g -O3 -Wall -DSLES12 -DHARDCLOCK_STACK_SKIP=0 -DOTHER_STACK_SKIP=3
+        EXTRA_CFLAGS=-g -O3 -Wall -DSLES12 -DHARDCLOCK_STACK_SKIP=9 -DOTHER_STACK_SKIP=3
     else ifneq (,$(findstring 15,$(hostversion)))
         #SLES15
         EXTRA_CFLAGS=-g -O3 -Wall -DSLES15 -DHARDCLOCK_STACK_SKIP=8 -DOTHER_STACK_SKIP=3
