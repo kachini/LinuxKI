@@ -32,6 +32,10 @@ elif [ "$ARCH" == "aarch64" ]; then
 	ln /opt/linuxki/kiinfo.aarch64 /opt/linuxki/kiinfo
 elif [ "$ARCH" == "ppc64le" ]; then
 	rm /opt/linuxki/kiinfo >/dev/null 2>&1
+echo -e \\tBuilding kiinfo for PPC64LE platform. We do this while ppc64le version is under development. Later RPM will be packaged with binary. 
+        cd /opt/linuxki/src/kiinfo
+        make
+        cp /opt/linuxki/src/kiinfo/kiinfo /opt/linuxki/kiinfo.ppc64le
 	ln /opt/linuxki/kiinfo.ppc64le /opt/linuxki/kiinfo
 else
 	echo "Unknown Architecture.  Only x86_64, aarch64 and ppc64le supported"
