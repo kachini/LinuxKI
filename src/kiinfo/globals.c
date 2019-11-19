@@ -5139,6 +5139,7 @@ short syscall_index_aarch_64[MAX_SYSCALL_IDX] = {
 };
 
 short syscall_index_ppc64le[MAX_SYSCALL_IDX] = {
+	/* restart_syscall */	        219,
 	/* exit */               	60,
 	/* fork */               	57,
 	/* read */               	0,
