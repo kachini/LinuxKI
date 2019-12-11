@@ -787,14 +787,23 @@ liki_stack_unwind(struct pt_regs *regs, int skip, int *start)
                 asm volatile("mfmsr %0" : "=r" ((regs)->msr));  \
         } while (0)
 
-/* for PPC64 just taking x86 stuff as a prototype. It seems giving something. */
+
+struct frame_tail {
+        struct frame_tail __user *fp;
+        unsigned long cr;  /* Condition register save area - not used */
+        unsigned long lr;
+} __attribute__((packed));
+
 
 inline struct liki_callchain_entry *
 liki_stack_unwind(struct pt_regs *regs, int skip, int *start)
  {
 
- 
-       struct liki_callchain_entry     *callchain;
+        unsigned long err;
+        unsigned long lr;
+        struct frame_tail __user *fp;
+        struct frame_tail buftail;
+        struct liki_callchain_entry     *callchain;
         struct pt_regs                  local_regs;
 
         /* Switch and migration cases regs will be NULL
@@ -860,6 +869,28 @@ liki_stack_unwind(struct pt_regs *regs, int skip, int *start)
                         regs = NULL;
         }
 
+        if (regs) {
+                lr = regs->link;
+                fp = (struct frame_tail __user *) regs->gpr[1];
+
+                callchain->ip[callchain->nr++] = STACK_CONTEXT_USER;
+                callchain->ip[callchain->nr++] = lr;
+
+                while (callchain->nr < MAX_STACK_DEPTH && fp &&
+                        !((unsigned long)fp & 0xf)) {
+
+                        pagefault_disable();
+                        err = __copy_from_user_inatomic(&buftail, fp, sizeof(buftail));
+                        pagefault_enable();
+                        if (err) break;
+
+                callchain->ip[callchain->nr++]=buftail.lr;
+
+                if (fp >= buftail.fp) break;
+
+                fp = buftail.fp;
+                }
+        }
 
         put_cpu_var(liki_callchains);
 
@@ -7024,7 +7055,7 @@ liki_initialize(void)
 		return(-EINVAL);
 	}
 
-	printk(KERN_INFO "LiKI: tracing debgu was set up successfully\n");
+	printk(KERN_INFO "LiKI: tracing was set up successfully\n");
 	return(0);
 }
 
